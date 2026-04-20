@@ -34,3 +34,11 @@ func TestValidateRetry_NegativeDelay(t *testing.T) {
 		t.Fatal("expected error for negative delay")
 	}
 }
+
+func TestValidateRetry_ZeroDelay(t *testing.T) {
+	// zero delay is valid — it means retry immediately with no wait
+	err := validateRetry(RetryConfig{Attempts: 1, Delay: 0})
+	if err != nil {
+		t.Errorf("unexpected error for zero delay: %v", err)
+	}
+}
