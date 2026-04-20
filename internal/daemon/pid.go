@@ -1,4 +1,3 @@
-// Package daemon runs the portwatch monitoring loop.
 package daemon
 
 import (
@@ -8,34 +7,33 @@ import (
 	"strings"
 )
 
-// WritePID writes the current process PID to the given file.
+// WritePID writes the current process ID to the given file path.
 func WritePID(path string) error {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
-	if err != nil {
-		return fmt.Errorf("pid: open %s: %w", path, err)
+	pid := os.Getpid()
+	data := fmt.Sprintf("%d\n", pid)
+	return os.WriteFile(path, []byte(data), 0o644)
+}
+
+// RemovePID deletes the PID file at the given path.
+// It returns nil if the file does not exist.
+func RemovePID(path string) error {
+	err := os.Remove(path)
+	if os.IsNotExist(err) {
+		return nil
 	}
-	defer f.Close()
-	_, err = fmt.Fprintf(f, "%d\n", os.Getpid())
 	return err
 }
 
-// RemovePID deletes the PID file if it exists.
-func RemovePID(path string) error {
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("pid: remove %s: %w", path, err)
-	}
-	return nil
-}
-
-// ReadPID reads and returns the PID stored in the file.
+// ReadPID reads and returns the PID stored in the given file.
 func ReadPID(path string) (int, error) {
-	b, err := os.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return 0, fmt.Errorf("pid: read %s: %w", path, err)
+		return 0, err
 	}
-	pid, err := strconv.Atoi(strings.TrimSpace(string(b)))
+	s := strings.TrimSpace(string(data))
+	pid, err := strconv.Atoi(s)
 	if err != nil {
-		return 0, fmt.Errorf("pid: parse: %w", err)
+		return 0, fmt.Errorf("invalid pid file %q: %w", path, err)
 	}
 	return pid, nil
 }
