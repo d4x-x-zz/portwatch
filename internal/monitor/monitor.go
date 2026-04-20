@@ -3,6 +3,7 @@ package monitor
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -44,7 +45,18 @@ func NewPortSet(ports []int) PortSet {
 	return ps
 }
 
+// Ports returns a sorted slice of all ports in the set.
+func (ps PortSet) Ports() []int {
+	ports := make([]int, 0, len(ps))
+	for p := range ps {
+		ports = append(ports, p)
+	}
+	sort.Ints(ports)
+	return ports
+}
+
 // Compare returns a Diff between a previous and current PortSet.
+// The Opened and Closed slices in the result are sorted in ascending order.
 func Compare(prev, curr PortSet) Diff {
 	var d Diff
 	for p := range curr {
@@ -57,5 +69,7 @@ func Compare(prev, curr PortSet) Diff {
 			d.Closed = append(d.Closed, p)
 		}
 	}
+	sort.Ints(d.Opened)
+	sort.Ints(d.Closed)
 	return d
 }
