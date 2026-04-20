@@ -52,3 +52,20 @@ func TestSnapshot_IsCopy(t *testing.T) {
 		t.Error("snapshots should be independent")
 	}
 }
+
+func TestNew_InitialValuesAreZero(t *testing.T) {
+	c := New()
+	s := c.Snapshot()
+	if s.ScansTotal != 0 {
+		t.Errorf("expected ScansTotal 0, got %d", s.ScansTotal)
+	}
+	if s.AlertsTotal != 0 {
+		t.Errorf("expected AlertsTotal 0, got %d", s.AlertsTotal)
+	}
+	if s.LastScanPorts != 0 {
+		t.Errorf("expected LastScanPorts 0, got %d", s.LastScanPorts)
+	}
+	if !s.LastScanAt.IsZero() {
+		t.Errorf("expected LastScanAt to be zero, got %v", s.LastScanAt)
+	}
+}
