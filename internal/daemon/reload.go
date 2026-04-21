@@ -12,6 +12,7 @@ type ReloadFunc func() error
 
 // WatchReload blocks until SIGHUP is received or ctx is cancelled.
 // On SIGHUP it calls fn and continues watching. On ctx cancellation it returns.
+// If fn returns an error, WatchReload stops and returns that error.
 func WatchReload(ctx context.Context, fn ReloadFunc) error {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGHUP)
@@ -35,4 +36,14 @@ func ReloadChannel() (ch <-chan os.Signal, stop func()) {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP)
 	return sig, func() { signal.Stop(sig) }
+}
+
+// SendReload sends SIGHUP to the process with the given pid, triggering a
+// reload if that process is running WatchReload or listening on ReloadChannel.
+func SendReload(pid int) error {
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		return err
+	}
+	return proc.Signal(syscall.SIGHUP)
 }
