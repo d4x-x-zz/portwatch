@@ -1,72 +1,52 @@
 package config
 
-import "fmt"
+import "errors"
 
-// NotifyConfig holds configuration for the notification pipeline.
-type NotifyConfig struct {
-	// Throttle suppresses repeated alerts within a time window.
-	Throttle ThrottleConfig `toml:"throttle"`
-
-	// RateLimit prevents identical diffs from firing repeatedly.
-	RateLimit RateLimitConfig `toml:"rate_limit"`
-
-	// Circuit breaker stops alerting after repeated failures.
-	Circuit CircuitConfig `toml:"circuit"`
+// Notify groups all notification pipeline configuration.
+type Notify struct {
+	Retry          Retry          `toml:"retry"`
+	Backoff        Backoff        `toml:"backoff"`
+	RateLimit      RateLimit      `toml:"rate_limit"`
+	Dedupe         Dedupe         `toml:"dedupe"`
+	Suppress       Suppress       `toml:"suppress"`
+	Debounce       Debounce       `toml:"debounce"`
+	CircuitBreaker CircuitBreaker `toml:"circuit_breaker"`
 }
 
-// ThrottleConfig controls how often alerts may fire.
-type ThrottleConfig struct {
-	Enabled  bool   `toml:"enabled"`
-	WindowSec int   `toml:"window_sec"`
-}
-
-// RateLimitConfig suppresses duplicate diffs within a cooldown period.
-type RateLimitConfig struct {
-	Enabled     bool  `toml:"enabled"`
-	CooldownSec int   `toml:"cooldown_sec"`
-}
-
-// CircuitConfig configures the circuit breaker for alerters.
-type CircuitConfig struct {
-	Enabled        bool  `toml:"enabled"`
-	Threshold      int   `toml:"threshold"`
-	CooldownSec    int   `toml:"cooldown_sec"`
-}
-
-// DefaultNotify returns a NotifyConfig with sensible defaults.
-func DefaultNotify() NotifyConfig {
-	return NotifyConfig{
-		Throttle: ThrottleConfig{
-			Enabled:   false,
-			WindowSec: 60,
-		},
-		RateLimit: RateLimitConfig{
-			Enabled:     true,
-			CooldownSec: 300,
-		},
-		Circuit: CircuitConfig{
-			Enabled:     true,
-			Threshold:   5,
-			CooldownSec: 120,
-		},
+// DefaultNotify returns a Notify config populated with all sub-defaults.
+func DefaultNotify() Notify {
+	return Notify{
+		Retry:          DefaultRetry(),
+		Backoff:        DefaultBackoff(),
+		RateLimit:      DefaultRateLimit(),
+		Dedupe:         DefaultDedupe(),
+		Suppress:       DefaultSuppress(),
+		Debounce:       DefaultDebounce(),
+		CircuitBreaker: DefaultCircuitBreaker(),
 	}
 }
 
-// validateNotify checks that notify config values are in range.
-func validateNotify(n NotifyConfig) error {
-	if n.Throttle.Enabled && n.Throttle.WindowSec <= 0 {
-		return fmt.Errorf("notify.throttle.window_sec must be positive")
+func validateNotify(n Notify) error {
+	if err := validateRetry(n.Retry); err != nil {
+		return err
 	}
-	if n.RateLimit.Enabled && n.RateLimit.CooldownSec <= 0 {
-		return fmt.Errorf("notify.rate_limit.cooldown_sec must be positive")
+	if err := validateBackoff(n.Backoff); err != nil {
+		return err
 	}
-	if n.Circuit.Enabled {
-		if n.Circuit.Threshold <= 0 {
-			return fmt.Errorf("notify.circuit.threshold must be positive")
-		}
-		if n.Circuit.CooldownSec <= 0 {
-			return fmt.Errorf("notify.circuit.cooldown_sec must be positive")
-		}
+	if err := validateRateLimit(n.RateLimit); err != nil {
+		return err
+	}
+	if err := validateDedupe(n.Dedupe); err != nil {
+		return err
+	}
+	if err := validateSuppress(n.Suppress); err != nil {
+		return err
+	}
+	if err := validateDebounce(n.Debounce); err != nil {
+		return err
+	}
+	if err := validateCircuitBreaker(n.CircuitBreaker); err != nil {
+		return errors.New("notify.circuit_breaker: " + err.Error())
 	}
 	return nil
 }
