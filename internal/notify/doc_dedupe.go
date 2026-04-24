@@ -1,6 +1,6 @@
 // Package notify provides alerting middleware for portwatch.
 //
-// DedupeAlerter suppresses repeated notifications for the same diff
-// until the diff changes or a reset occurs. This prevents alert storms
-// when a port remains in an unexpected state across multiple scan cycles.
+// DedupeAlerter suppresses consecutive identical diffs so that the
+// downstream alerter is only called when the port state actually
+// changes between successive scans.
 package notify
