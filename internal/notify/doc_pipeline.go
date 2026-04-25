@@ -1,14 +1,6 @@
-// Package notify provides alerter middleware and pipeline utilities.
+// Package notify provides alerting middleware for portwatch.
 //
-// A Pipeline chains middlewares (rate limiting, throttling, retry, circuit
-// breaking, debouncing) around a base Alerter. Build one with NewPipeline:
-//
-//	pipeline := notify.NewPipeline(
-//		baseAlerter,
-//		func(a notify.Alerter) notify.Alerter { return notify.NewRateLimiter(a, cooldown) },
-//		func(a notify.Alerter) notify.Alerter { return notify.NewRetryAlerter(a, cfg) },
-//	)
-//
-// Middlewares are applied outermost-first, so the first middleware in the
-// slice is the first to handle each Notify call.
+// Pipeline chains multiple alerter wrappers together in a defined order,
+// allowing operators to compose rate limiting, deduplication, throttling,
+// circuit breaking, and retry behaviour declaratively from configuration.
 package notify
