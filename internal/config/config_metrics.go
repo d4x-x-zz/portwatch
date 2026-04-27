@@ -1,6 +1,9 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // MetricsConfig controls the built-in HTTP metrics endpoint.
 type MetricsConfig struct {
@@ -29,6 +32,9 @@ func validateMetrics(m MetricsConfig) error {
 	}
 	if m.Path == "" {
 		return fmt.Errorf("metrics.path must not be empty")
+	}
+	if !strings.HasPrefix(m.Path, "/") {
+		return fmt.Errorf("metrics.path must start with '/'")
 	}
 	if m.MaxHistory < 1 {
 		return fmt.Errorf("metrics.max_history must be at least 1")
